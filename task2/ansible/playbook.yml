@@ -25,6 +25,7 @@
         name: docker
         enabled: true
         state: started
+      when: not ansible_check_mode
 
     - name: Download kubectl binary
       ansible.builtin.get_url:
