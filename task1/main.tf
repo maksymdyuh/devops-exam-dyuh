@@ -29,7 +29,7 @@ provider "digitalocean" {
 resource "digitalocean_vpc" "vpc" {
   name     = "dyuh-vpc-ekz"
   region   = "fra1"
-  ip_range = "10.10.10.0/24"
+  ip_range = "10.10.11.0/24" # Змінено з 10.10.10.0/24 через конфлікт зі старою мережею
 }
 
 # 2. Налаштування фаєрволу
