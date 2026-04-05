@@ -1,0 +1,98 @@
+---
+- name: Install Kubernetes toolchain on VM
+  hosts: k8s_nodes
+  become: true
+  vars:
+    kubectl_version: v1.30.2
+    minikube_version: v1.35.0
+
+  tasks:
+    - name: Install base dependencies
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - conntrack
+          - socat
+          - apt-transport-https
+          - gnupg
+          - docker.io
+        state: present
+        update_cache: true
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Download kubectl binary
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+
+    - name: Download minikube binary
+      ansible.builtin.get_url:
+        url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"
+        dest: /usr/local/bin/minikube
+        mode: "0755"
+
+    - name: Download Helm installer script
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: "0755"
+
+    - name: Install Helm
+      ansible.builtin.command: /tmp/get_helm.sh
+      args:
+        creates: /usr/local/bin/helm
+      when: not ansible_check_mode
+
+    - name: Check current minikube status
+      ansible.builtin.command: minikube status --output=json
+      register: minikube_status
+      changed_when: false
+      failed_when: false
+
+    - name: Start minikube cluster
+      ansible.builtin.command: minikube start --driver=docker --force
+      when:
+        - not ansible_check_mode
+        - minikube_status.rc != 0
+
+    - name: Create kubectl proxy systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/kubectl-proxy.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Kubernetes API proxy for Minikube
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=root
+          ExecStart=/usr/local/bin/kubectl proxy --address=0.0.0.0 --accept-hosts=.* --port=8001
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd and enable kubectl proxy
+      ansible.builtin.systemd:
+        name: kubectl-proxy
+        daemon_reload: true
+        enabled: true
+        state: started
+      when: not ansible_check_mode
+
+    - name: Verify installed binaries
+      ansible.builtin.command: "{{ item }}"
+      loop:
+        - kubectl version --client
+        - minikube version
+        - helm version
+      changed_when: false
