@@ -106,7 +106,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no root@${{ inputs.target_host }} "export KUBECONFIG=/root/.kube/config; kubectl apply -f /tmp/deploy.yaml"
           ssh -o StrictHostKeyChecking=no root@${{ inputs.target_host }} "export KUBECONFIG=/root/.kube/config; kubectl apply -f /tmp/service.yaml"
           # Create bash script locally, copy via SCP, and run to bypass SSH quoting issues
-          cat > pf-setup.sh << 'EOF'
+          cat > pf-setup.sh << EOF
           export KUBECONFIG=/root/.kube/config
           cat > /etc/systemd/system/k8s-pf-$NAMESPACE.service << 'SVC'
           [Unit]
