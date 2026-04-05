@@ -27,7 +27,7 @@ provider "digitalocean" {
 
 # 1. Віртуальна приватна хмара (VPC)
 resource "digitalocean_vpc" "vpc" {
-  name     = "dyuh-vpc"
+  name     = "dyuh-vpc-ekz"
   region   = "fra1"
   ip_range = "10.10.10.0/24"
 }
