@@ -108,16 +108,16 @@ jobs:
           # Create bash script locally, copy via SCP, and run to bypass SSH quoting issues
           cat > pf-setup.sh << EOF
           export KUBECONFIG=/root/.kube/config
-          cat > /etc/systemd/system/k8s-pf-$NAMESPACE.service << 'SVC'
+          cat > /etc/systemd/system/k8s-pf-${NAMESPACE}.service << 'SVC'
           [Unit]
-          Description=Kubernetes Port Forward for $NAMESPACE
+          Description=Kubernetes Port Forward for ${NAMESPACE}
           After=network.target
 
           [Service]
           Type=simple
           User=root
           Environment=KUBECONFIG=/root/.kube/config
-          ExecStart=/usr/local/bin/kubectl port-forward --address 0.0.0.0 svc/app-service $EXT_PORT:80 -n $NAMESPACE
+          ExecStart=/usr/local/bin/kubectl port-forward --address 0.0.0.0 svc/app-service ${EXT_PORT}:80 -n ${NAMESPACE}
           Restart=always
           RestartSec=5
 
@@ -125,11 +125,11 @@ jobs:
           WantedBy=multi-user.target
           SVC
           systemctl daemon-reload
-          systemctl restart k8s-pf-$NAMESPACE
-          systemctl enable k8s-pf-$NAMESPACE
+          systemctl restart k8s-pf-${NAMESPACE}
+          systemctl enable k8s-pf-${NAMESPACE}
           EOF
-          scp -o StrictHostKeyChecking=no pf-setup.sh root@${{ inputs.target_host }}:/tmp/
-          ssh -o StrictHostKeyChecking=no root@${{ inputs.target_host }} "bash /tmp/pf-setup.sh"
+          scp -o StrictHostKeyChecking=no pf-setup.sh root@\${{ inputs.target_host }}:/tmp/
+          ssh -o StrictHostKeyChecking=no root@\${{ inputs.target_host }} "bash /tmp/pf-setup.sh"
 
       - name: Rollback
         if: inputs.action == 'Rollback (undo last deploy)'
