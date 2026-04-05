@@ -1,0 +1,59 @@
+name: "Task 1: Terraform CI/CD"
+
+on:
+  push:
+    paths:
+      - 'task1/**'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform Action to perform'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./task1
+
+    env:
+      TF_VAR_do_token: ${{ secrets.DO_PAT }}
+      TF_VAR_spaces_access_key: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+      TF_VAR_spaces_secret_key: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan
+        continue-on-error: false
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply' || github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: terraform destroy -auto-approve
