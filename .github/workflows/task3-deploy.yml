@@ -106,9 +106,27 @@ jobs:
           ssh root@${{ inputs.target_host }} "kubectl apply -f /tmp/deploy.yaml"
           ssh root@${{ inputs.target_host }} "kubectl apply -f /tmp/service.yaml"
           
-          # Setup Port-Forwarding (kill old one if exists, start new)
-          ssh root@${{ inputs.target_host }} "pkill -f 'kubectl port-forward.*$EXT_PORT:80' || true"
-          ssh root@${{ inputs.target_host }} "nohup kubectl port-forward --address 0.0.0.0 svc/app-service $EXT_PORT:80 -n $NAMESPACE > /dev/null 2>&1 &"
+          # Setup Port-Forwarding via systemd for reliability
+          ssh root@${{ inputs.target_host }} << EOF
+          cat > /etc/systemd/system/k8s-pf-$NAMESPACE.service << 'SVC'
+          [Unit]
+          Description=Kubernetes Port Forward for $NAMESPACE
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=root
+          ExecStart=/usr/local/bin/kubectl port-forward --address 0.0.0.0 svc/app-service $EXT_PORT:80 -n $NAMESPACE
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+          SVC
+          systemctl daemon-reload
+          systemctl restart k8s-pf-$NAMESPACE
+          systemctl enable k8s-pf-$NAMESPACE
+          EOF
 
       - name: Rollback
         if: inputs.action == 'Rollback (undo last deploy)'
