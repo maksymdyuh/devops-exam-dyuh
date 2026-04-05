@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    endpoint                    = "fra1.digitaloceanspaces.com"
+    endpoint                    = "https://fra1.digitaloceanspaces.com"
     region                      = "us-east-1" # Для S3-сумісного бекенду в DO часто залишають us-east-1, а endpoint вказує на fra1
     bucket                      = "dyuh-tfstate-bucket"
     key                         = "task1/terraform.tfstate"
