@@ -107,7 +107,7 @@ jobs:
           ssh root@${{ inputs.target_host }} "kubectl apply -f /tmp/service.yaml"
           
           # Setup Port-Forwarding via systemd for reliability
-          ssh root@${{ inputs.target_host }} << EOF
+          ssh -o StrictHostKeyChecking=no root@${{ inputs.target_host }} << EOF
           cat > /etc/systemd/system/k8s-pf-$NAMESPACE.service << 'SVC'
           [Unit]
           Description=Kubernetes Port Forward for $NAMESPACE
@@ -116,6 +116,7 @@ jobs:
           [Service]
           Type=simple
           User=root
+          Environment=KUBECONFIG=/root/.kube/config
           ExecStart=/usr/local/bin/kubectl port-forward --address 0.0.0.0 svc/app-service $EXT_PORT:80 -n $NAMESPACE
           Restart=always
           RestartSec=5
