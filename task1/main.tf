@@ -71,12 +71,13 @@ resource "digitalocean_droplet" "node" {
   vpc_uuid = digitalocean_vpc.vpc.id
   
   # Додаємо ваш публічний SSH ключ (потрібно буде його прокинути)
-  ssh_keys = [data.digitalocean_ssh_key.my_key.id]
+  ssh_keys = [digitalocean_ssh_key.my_key.id]
 }
 
-# Підтягуємо існуючий SSH ключ з вашого акаунту DO (для доступу до створеної ВМ)
-data "digitalocean_ssh_key" "my_key" {
-  name = "DO VM Key" # змініть якщо назвали ключ в DO інакше
+# Створюємо новий SSH ключ в DO для доступу до створеної ВМ
+resource "digitalocean_ssh_key" "my_key" {
+  name       = "dyuh-vm-key"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBL+vAllzW2fZX+e2aJdT8HlxJq5jXalQyx7pEqVn5ov"
 }
 
 # 4. Сховище для об'єктів (бакет)
